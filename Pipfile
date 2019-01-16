@@ -9,6 +9,11 @@ verify_ssl = true
 neomodel = "*"
 bookmarks-parser = "*"
 py2neo = "*"
+sqlalchemy-utils = "*"
+sqlalchemy = "*"
+psycopg2-binary = "*"
+psycopg2 = "*"
+python-slugify = "*"
 
 [requires]
 python_version = "3.7"
