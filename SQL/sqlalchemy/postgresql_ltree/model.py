@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy_utils import LtreeType, URLType
 
-engine = create_engine('postgresql://postgres:18091997@localhost/olimp')
+engine = create_engine('postgresql://postgres:password@localhost/db')
 connection = engine.connect()
 Base = declarative_base()
 
@@ -16,7 +16,7 @@ class Folder(Base):
     add_date = sa.Column(sa.DateTime, default=sa.func.now())
     last_modified = sa.Column(sa.DateTime, default=sa.func.now())
     path = sa.Column(LtreeType)
-    bookmarks = relationship("Bookmark", backref="folder")
+    bookmarks = relationship("Bookmark", cascade="all")
 
 
 class Bookmark(Base):

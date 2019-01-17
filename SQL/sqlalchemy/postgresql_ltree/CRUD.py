@@ -5,10 +5,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import Ltree
 
-from SQL.postgresql.ltree.model import Folder, Bookmark, Base
+from SQL.sqlalchemy.postgresql_ltree.model import Folder, Bookmark, Base
 from slugify import slugify
 
-engine = create_engine('postgresql://postgres:18091997@localhost/olimp')
+engine = create_engine('postgresql://postgres:password@localhost/db')
 Base.metadata.bind = engine
 
 Session = sessionmaker(bind=engine)
@@ -59,18 +59,11 @@ if __name__ == '__main__':
         path = folder.path[index:]
         folder.path = move_to_folder_on_other.path + path
         session.add(folder)
-        session.commit()
+    session.commit()
 
-    # remove folder with all nested bookmarks and folders
-    def delete_folder(folder):
-        for bookmark in folder.bookmarks:
-            print(bookmark.title)
-            session.delete(bookmark)
-            session.commit()
-        session.delete(folder)
-        session.commit()
-
+    # # remove folder with all nested bookmarks and folders
     first_level_folder = session.query(Folder).filter(Folder.title == 'First level bookmark bar folder').one()
     first_level_folders = session.query(Folder).filter(Folder.path.descendant_of(first_level_folder.path)).all()
     for folder in first_level_folders:
-        delete_folder(folder)
+        session.delete(folder)
+    session.commit()
