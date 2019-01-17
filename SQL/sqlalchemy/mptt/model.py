@@ -1,13 +1,17 @@
+import os
+
 from sqlalchemy import Column, Integer, create_engine, orm, String, DateTime, func, ARRAY, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy_mptt import mptt_sessionmaker
 
 from sqlalchemy_mptt.mixins import BaseNestedSets
 
-engine = create_engine('postgresql://postgres:password@localhost/db')
+engine = create_engine(os.environ.get('PG_DATABASE_URL'))
 connection = engine.connect()
 Base = declarative_base()
+Base.metadata.bind = engine
 
 
 class Folder(Base, BaseNestedSets):
@@ -17,7 +21,8 @@ class Folder(Base, BaseNestedSets):
     title = Column(String, nullable=False)
     add_date = Column(DateTime, default=func.now())
     last_modified = Column(DateTime, default=func.now())
-    bookmarks = relationship("Bookmark", cascade="all")
+    bookmarks = relationship("Bookmark", cascade="all", order_by="Bookmark.position",
+                             collection_class=ordering_list('position'))
 
 
 class Bookmark(Base):
@@ -30,6 +35,7 @@ class Bookmark(Base):
     icon_uri = Column(String)
     tags = Column(ARRAY(Integer))
     parent_id = Column(Integer, ForeignKey('folder_mptt.id'))
+    position = Column(Integer)
 
 
 if __name__ == '__main__':
@@ -37,14 +43,9 @@ if __name__ == '__main__':
     session = Session()
 
     orm.configure_mappers()
-    session.query(Bookmark).delete()
-    session.query(Folder).delete()
-    session.commit()
 
-    # Folder.__table__.drop()
-    Base.metadata.create_all(connection)
-    #
-    # node = Folder(title='First level')
-    # session.add(node)
-    # session.commit()
+    # Base.metadata.create_all(connection)
+    Bookmark.__table__.drop()
+    Folder.__table__.drop()
+    # Base.metadata.create_all(connection)
 

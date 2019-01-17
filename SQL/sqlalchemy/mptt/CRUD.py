@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 
 import bookmarks_parser
 from sqlalchemy import create_engine
@@ -7,7 +8,7 @@ from sqlalchemy_mptt import mptt_sessionmaker
 
 from SQL.sqlalchemy.mptt.model import Folder, Bookmark
 
-engine = create_engine('postgresql://postgres:password@localhost/olimp')
+engine = create_engine(os.environ.get('PG_DATABASE_URL'))
 Session = mptt_sessionmaker(sessionmaker(bind=engine))
 session = Session()
 
@@ -45,15 +46,23 @@ if __name__ == '__main__':
     bookmarks = bookmarks_parser.parse("/home/andriy/PycharmProjects/bookmarks2db/chrome_bookmarks.html")
     save2db(bookmarks)
 
-    # move folder with all nested bookmarks and folders
-    def move(folder, dest_folder):
+    # move folder with all nested bookmarks and folders to other folder and set position
+    def move_folder(folder, dest_folder):
         f = session.query(Folder).filter(Folder.title == folder).one()
-        print(f.id)
         dest = session.query(Folder).filter(Folder.title == dest_folder).one()
-        print(dest.id)
-        f.move_inside(dest.id)
+        f.move_after(dest.id)
         session.commit()
-    move('First level bookmark bar folder', 'folder on other')
+    move_folder('folder on other', 'First level bookmark bar folder')
+
+    # move bookmark between folder and position
+    def move_bookmark_before(bookmark_title, folder_title, before_bookmark_title):
+        bookmark = session.query(Bookmark).filter(Bookmark.title == bookmark_title).one()
+        folder = session.query(Folder).filter(Folder.title == folder_title).one()
+        after_bookmark = session.query(Bookmark).filter(Bookmark.title == before_bookmark_title).one()
+        folder.bookmarks.insert(after_bookmark.position, bookmark)
+        session.commit()
+
+    move_bookmark_before('reddit: the front page of the internet', 'Second level bookmark bar folder', 'Google Перекладач')
 
     # remove folder with all nested bookmarks and folders
     node = session.query(Folder).filter(Folder.title == 'First level bookmark bar folder').one()
